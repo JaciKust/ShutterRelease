@@ -14,15 +14,18 @@ class Runner:
         self.wand = Wand(18, 27, 22, 23, 24, 25)
         self.camera = Camera(5, 6)
 
-        self.wand.bottom_button.button_events.on_depressed += self.shoot
+        self.wand.white_button.button_events.on_depressed += self.shoot
+
+        self.wand.led.set_color(ColorConstant.GREEN)
+
 
     def shoot(self, trigger_pin):
         shoot_time = 1
-        self.wand.led.set_color(ColorConstant.DIM_BLUE)
+        self.wand.led.set_color(ColorConstant.BLACK)
         self.camera.take_photo(shoot_time)
         self.wand.led.set_color(ColorConstant.DIM_RED)
         time.sleep(shoot_time)
-        self.wand.led.set_color(ColorConstant.GREEN)
+        self.wand.led.set_color(ColorConstant.DIM_GREEN)
 
 
 if __name__ == '__main__':
