@@ -18,6 +18,8 @@ import adafruit_ssd1306
 # Import the RFM69 radio module.
 import adafruit_rfm69
 
+from Camera import Camera
+
 
 class Runner:
     def __init__(self):
@@ -64,7 +66,20 @@ class Runner:
             packet_text = str(prev_packet, "utf-8")
             data = json.loads(packet_text, object_hook=self._decoder)
             print('Name: ' + data.name)
-            time.sleep(1)
+
+            self.run_logic(data)
+
+    camera = Camera(20, 21)
+    def run_logic(self, command):
+        if command.name == 'Focus':
+            print("Focusing!")
+            self.camera.focus()
+        elif command.name == 'Shoot':
+            print("Shooting!")
+            self.camera.shoot()
+        elif command.name == 'Wait':
+            time.sleep(command.time)
+
 
 
 if __name__ == '__main__':
