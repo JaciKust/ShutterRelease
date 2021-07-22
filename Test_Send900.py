@@ -19,6 +19,8 @@ import adafruit_rfm69
 from DataObjects.Focus import FocusDataObject
 from DataObjects.LightState import LightState
 from DataObjects.Shoot import ShootDataObject
+from Wand import Wand
+import Color as ColorConstant
 
 
 class Runner:
@@ -46,15 +48,29 @@ class Runner:
         # on the transmitter and receiver (or be set to None to disable/the default).
         self.rfm69.encryption_key = b'\x01\x02\x03\x04\x05\x06\x07\x08\x01\x02\x03\x04\x05\x06\x07\x08'
 
+        self.wand = Wand(4, 17, 18, 27, 20, 21)
+        self.wand.yellow_button.button_events.on_depressed += self.shoot
+        self.wand.black_button.button_events.on_depressed += self.focus
+        self.wand.led.set_color(ColorConstant.RED)
+
     def send(self, data):
         data = json.dumps(data.__dict__)
         data = bytes(data + "\r\n","utf-8")
         self.rfm69.send(data)
 
+    def shoot(self, channel = None):
+        self.send(ShootDataObject())
+        self.wand.led.set_color(ColorConstant.BLUE)
+        time.sleep(0.5)
+        self.wand.led.set_color(ColorConstant.RED)
+
+    def focus(self, channel=None):
+        self.send(FocusDataObject())
+        self.wand.led.set_color(ColorConstant.GREEN)
+
 
 if __name__ == '__main__':
     r = Runner()
-    r.send(FocusDataObject())
-    time.sleep(2)
-    r.send(ShootDataObject())
+    while True:
+        time.sleep(0.1)
 
