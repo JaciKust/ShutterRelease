@@ -2,8 +2,7 @@ from DataObjects.NamedDataObject import NamedDataObject
 
 
 class LightState(NamedDataObject):
-    def __init__(self, state, pins=None, in_time=None):
-        super().__init__(1, 'LightState')
+    def __init__(self, state):
+        super().__init__('LightState')
         self.state = state
-        self.in_time = in_time
 

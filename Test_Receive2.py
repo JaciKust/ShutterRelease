@@ -8,6 +8,8 @@ Author: Brent Rubell for Adafruit Industries
 import json
 import time
 # Import Blinka Libraries
+from collections import namedtuple
+
 import busio
 from digitalio import DigitalInOut, Direction, Pull
 import board
@@ -16,11 +18,8 @@ import adafruit_ssd1306
 # Import the RFM69 radio module.
 import adafruit_rfm69
 
-from DataObjects.Focus import FocusDataObject
-from DataObjects.LightState import LightState
-from DataObjects.Shoot import ShootDataObject
-from Wand import Wand
-import Color as ColorConstant
+from Camera import Camera
+from OutletSwitch import OutletSwitch
 
 
 class Runner:
@@ -48,31 +47,42 @@ class Runner:
         # on the transmitter and receiver (or be set to None to disable/the default).
         self.rfm69.encryption_key = b'\x01\x02\x03\x04\x05\x06\x07\x08\x01\x02\x03\x04\x05\x06\x07\x08'
 
-        self.wand = Wand(4, 17, 18, 27, 20, 21)
-        self.wand.yellow_button.button_events.on_depressed += self.shoot
-        self.wand.black_button.button_events.on_depressed += self.focus
-        self.wand.led.set_color(ColorConstant.RED)
+        self.switch1 = OutletSwitch(4, 17)
 
-    def send(self, data):
-        data = json.dumps(data.__dict__)
-        data = bytes(data + "\r\n","utf-8")
-        self.rfm69.send(data)
 
-    def shoot(self, channel = None):
-        self.send(LightState('on'))
-        self.send(ShootDataObject())
-        self.wand.led.set_color(ColorConstant.BLUE)
-        time.sleep(0.5)
-        self.send(LightState('off'))
-        self.wand.led.set_color(ColorConstant.RED)
+    def _decoder(self, dict):
+        return namedtuple('X', dict.keys())(*dict.values())
 
-    def focus(self, channel=None):
-        self.send(FocusDataObject())
-        self.wand.led.set_color(ColorConstant.GREEN)
+    def check_for_message(self):
+        packet = None
+        # draw a box to clear the image
+        self.display.fill(0)
+        self.display.text('RasPi Radio', 35, 0, 1)
+
+        # check for packet rx
+        packet = self.rfm69.receive()
+        if packet is None:
+            self.display.show()
+            self.display.text('- Waiting for PKT -', 15, 20, 1)
+        else:
+            self.display.fill(0)
+            prev_packet = packet
+            packet_text = str(prev_packet, "utf-8")
+            data = json.loads(packet_text, object_hook=self._decoder)
+            print('Name: ' + data.name)
+
+            self.run_logic(data)
+
+    def run_logic(self, command):
+        if command.name == 'LightState':
+            if command.state == 'on':
+                self.switch1.set_on()
+            else:
+                self.switch1.set_off()
 
 
 if __name__ == '__main__':
     r = Runner()
-    while True:
-        time.sleep(0.1)
 
+    while True:
+        r.check_for_message()
