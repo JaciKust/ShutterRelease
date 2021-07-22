@@ -5,7 +5,7 @@ from RPi import GPIO
 
 from Toggleable import Toggleable
 
-click_time = 0.06
+click_time = 0.1
 
 
 class OutletSwitch(Toggleable):
