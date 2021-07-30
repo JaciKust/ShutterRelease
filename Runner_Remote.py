@@ -8,8 +8,6 @@ Author: Brent Rubell for Adafruit Industries
 import json
 import time
 # Import Blinka Libraries
-from collections import namedtuple
-
 import busio
 from digitalio import DigitalInOut, Direction, Pull
 import board
@@ -18,7 +16,11 @@ import adafruit_ssd1306
 # Import the RFM69 radio module.
 import adafruit_rfm69
 
-from Camera import Camera
+from DataObjects.Focus import FocusDataObject
+from DataObjects.LightState import LightState
+from DataObjects.Shoot import ShootDataObject
+from Wand import Wand
+import Color as ColorConstant
 
 
 class Runner:
@@ -46,44 +48,32 @@ class Runner:
         # on the transmitter and receiver (or be set to None to disable/the default).
         self.rfm69.encryption_key = b'\x01\x02\x03\x04\x05\x06\x07\x08\x01\x02\x03\x04\x05\x06\x07\x08'
 
-    def _decoder(self, dict):
-        return namedtuple('X', dict.keys())(*dict.values())
+        self.red_wand = Wand(12, 13, 16, 19, 20, 21)
+        self.red_wand.yellow_button.button_events.on_depressed += self.shoot
+        self.red_wand.black_button.button_events.on_depressed += self.focus
+        self.red_wand.led.set_color(ColorConstant.RED)
 
-    def check_for_message(self):
-        packet = None
-        # draw a box to clear the image
-        self.display.fill(0)
-        self.display.text('RasPi Radio', 35, 0, 1)
+    def send(self, data):
+        data = json.dumps(data.__dict__)
+        data = bytes(data + "\r\n","utf-8")
+        self.rfm69.send(data)
 
-        # check for packet rx
-        packet = self.rfm69.receive()
-        if packet is None:
-            self.display.show()
-            self.display.text('- Waiting for PKT -', 15, 20, 1)
-        else:
-            self.display.fill(0)
-            prev_packet = packet
-            packet_text = str(prev_packet, "utf-8")
-            data = json.loads(packet_text, object_hook=self._decoder)
-            print('Name: ' + data.name)
+    def shoot(self, channel=None):
+        self.send(ShootDataObject())
+        self.send(LightState('on'))
+        self.red_wand.led.set_color(ColorConstant.BLUE)
+        time.sleep(0.1)
+        self.send(LightState('off'))
+        time.sleep(0.4)
+        self.red_wand.led.set_color(ColorConstant.RED)
 
-            self.run_logic(data)
-
-    camera = Camera(20, 21)
-    def run_logic(self, command):
-        if command.name == 'Focus':
-            print("Focusing!")
-            self.camera.focus()
-        elif command.name == 'Shoot':
-            print("Shooting!")
-            self.camera.shoot()
-        elif command.name == 'Wait':
-            time.sleep(command.time)
-
+    def focus(self, channel=None):
+        self.send(FocusDataObject())
+        self.red_wand.led.set_color(ColorConstant.GREEN)
 
 
 if __name__ == '__main__':
     r = Runner()
-
     while True:
-        r.check_for_message()
+        time.sleep(0.1)
+

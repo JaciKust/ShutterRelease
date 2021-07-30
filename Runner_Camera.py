@@ -1,36 +1,113 @@
+"""
+Example for using the RFM69HCW Radio with Raspberry Pi.
+
+Learn Guide: https://learn.adafruit.com/lora-and-lorawan-for-raspberry-pi
+Author: Brent Rubell for Adafruit Industries
+"""
+# Import Python System Libraries
+import json
 import time
-from RPi import GPIO
-import Color as ColorConstant
+# Import Blinka Libraries
+from collections import namedtuple
+
+import busio
+from digitalio import DigitalInOut, Direction, Pull
+import board
+# Import the SSD1306 module.
+import adafruit_ssd1306
+# Import the RFM69 radio module.
+import adafruit_rfm69
+
 from Camera import Camera
-from Wand import Wand
 
 
 class Runner:
     def __init__(self):
-        GPIO.cleanup()
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
+        # Create the I2C interface.
+        self.restart = False
+        i2c = busio.I2C(board.SCL, board.SDA)
 
-        self.wand = Wand(18, 27, 22, 23, 24, 25)
-        self.camera = Camera(5, 6)
+        # 128x32 OLED Display
+        reset_pin = DigitalInOut(board.D4)
+        self.display = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c, reset=reset_pin)
+        # Clear the display.
+        self.display.fill(0)
+        self.display.show()
+        self.display_width = self.display.width
+        self.display_height = self.display.height
 
-        self.wand.white_button.button_events.on_depressed += self.shoot
+        # Configure Packet Radio
+        CS = DigitalInOut(board.CE1)
+        RESET = DigitalInOut(board.D25)
+        spi = busio.SPI(board.SCK, MOSI=board.MOSI, MISO=board.MISO)
+        self.rfm69 = adafruit_rfm69.RFM69(spi, CS, RESET, 915.0)
+        prev_packet = None
 
-        self.wand.led.set_color(ColorConstant.GREEN)
+        # Optionally set an encryption key (16 byte AES key). MUST match both
+        # on the transmitter and receiver (or be set to None to disable/the default).
+        self.rfm69.encryption_key = b'\x01\x02\x03\x04\x05\x06\x07\x08\x01\x02\x03\x04\x05\x06\x07\x08'
+
+    def _decoder(self, dict):
+        return namedtuple('X', dict.keys())(*dict.values())
+
+    def check_for_message(self):
+        packet = None
+        # draw a box to clear the image
+        self.display.fill(0)
+        self.display.text('RasPi Radio', 35, 0, 1)
+
+        # check for packet rx
+        packet = self.rfm69.receive()
+        if packet is None:
+            self.display.show()
+            self.display.text('- Waiting for PKT -', 15, 20, 1)
+        else:
+            self.display.fill(0)
+            prev_packet = packet
+            packet_text = str(prev_packet, "utf-8")
+            data = json.loads(packet_text, object_hook=self._decoder)
+            print('Name: ' + data.name)
+
+            self.run_logic(data)
+
+    camera = Camera(20, 21)
+
+    def run_logic(self, command):
+        if command.name == 'Focus':
+            print("Focusing!")
+            self.camera.focus()
+        elif command.name == 'Shoot':
+            print("Shooting!")
+            self.camera.shoot()
+        elif command.name == 'Wait':
+            time.sleep(command.time)
+        elif command.name == "Restart":
+            self.restart = True
 
 
-    def shoot(self, trigger_pin):
-        shoot_time = 1
-        self.wand.led.set_color(ColorConstant.BLACK)
-        self.camera.take_photo(shoot_time)
-        self.wand.led.set_color(ColorConstant.DIM_RED)
-        time.sleep(shoot_time)
-        self.wand.led.set_color(ColorConstant.DIM_GREEN)
+class Manager:
+    def __init__(self):
+        self.runner = None
+        self.init()
+        while True:
+            try:
+                self.loop()
+                if self.runner.restart:
+                    self.re_init()
+
+            except Exception as e:
+                print(e)
+
+    def init(self):
+        self.runner = Runner()
+
+    def loop(self):
+        self.runner.check_for_message()
+
+    def re_init(self):
+        self.init()
 
 
 if __name__ == '__main__':
-    Runner()
-
-    while True:
-        time.sleep(1)
+    Manager()
 

@@ -1,3 +1,5 @@
+import time
+
 from RPi import GPIO
 
 from Camera import Camera
@@ -15,6 +17,8 @@ class Runner:
 
         led.set_color(ColorConstant.MAGENTA)
         c = Camera(20, 21)
+        c.focus()
+        time.sleep(0.5)
         c.take_photo(0.5)
         led.set_color(ColorConstant.BLACK)
 

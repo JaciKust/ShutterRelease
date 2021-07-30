@@ -10,8 +10,8 @@ class Runner:
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
 
-        self.blue_wand = Wand(19, 16, 13, 12, 6, 5)
-        self.red_wand = Wand(4, 17, 18, 27, 20, 21)
+        self.blue_wand = Wand(12, 13, 16, 19, 20, 21)
+        self.red_wand = Wand(4, 17, 18, 27, 5, 6)
 
         self.blue_wand.white_button.button_events.on_depressed += self.flash_red
         self.blue_wand.yellow_button.button_events.on_depressed += self.flash_green
