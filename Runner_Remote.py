@@ -19,6 +19,7 @@ import adafruit_rfm69
 from DataObjects.Focus import FocusDataObject
 from DataObjects.LightState import LightState
 from DataObjects.Shoot import ShootDataObject
+from DataObjects.Reset import ResetDataObject
 from Wand import Wand
 import Color as ColorConstant
 
@@ -51,8 +52,9 @@ class Runner:
         self.red_wand = Wand(12, 13, 16, 19, 20, 21)
         self.red_wand.yellow_button.button_events.on_depressed += self.shoot
         self.red_wand.black_button.button_events.on_depressed += self.focus
-        self.red_wand.led.set_color(ColorConstant.RED)
+        self.red_wand.white_button.button_events.on_depressed += self.reset
 
+        self.red_wand.led.set_color(ColorConstant.RED)
     def send(self, data):
         data = json.dumps(data.__dict__)
         data = bytes(data + "\r\n","utf-8")
@@ -70,6 +72,10 @@ class Runner:
     def focus(self, channel=None):
         self.send(FocusDataObject())
         self.red_wand.led.set_color(ColorConstant.GREEN)
+
+    def reset(self, channel=None):
+        print('resetting')
+        self.send(ResetDataObject())
 
 
 if __name__ == '__main__':

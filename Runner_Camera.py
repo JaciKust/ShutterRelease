@@ -36,6 +36,8 @@ class Runner:
         self.display_width = self.display.width
         self.display_height = self.display.height
 
+        self.camera = Camera(20, 21)
+
         # Configure Packet Radio
         CS = DigitalInOut(board.CE1)
         RESET = DigitalInOut(board.D25)
@@ -70,8 +72,6 @@ class Runner:
 
             self.run_logic(data)
 
-    camera = Camera(20, 21)
-
     def run_logic(self, command):
         if command.name == 'Focus':
             print("Focusing!")
@@ -79,9 +79,9 @@ class Runner:
         elif command.name == 'Shoot':
             print("Shooting!")
             self.camera.shoot()
-        elif command.name == 'Wait':
-            time.sleep(command.time)
-        elif command.name == "Restart":
+        # elif command.name == 'Wait':
+        #     time.sleep(command.time)
+        elif command.name == 'Reset':
             self.restart = True
 
 
@@ -99,12 +99,14 @@ class Manager:
                 print(e)
 
     def init(self):
+        print('Starting!')
         self.runner = Runner()
 
     def loop(self):
         self.runner.check_for_message()
 
     def re_init(self):
+        print('Restarting!')
         self.init()
 
 
