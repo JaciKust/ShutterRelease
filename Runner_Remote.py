@@ -61,10 +61,11 @@ class Runner:
         self.rfm69.send(data)
 
     def shoot(self, channel=None):
-        self.send(ShootDataObject())
         self.send(LightState('on'))
-        self.red_wand.led.set_color(ColorConstant.BLUE)
         time.sleep(0.1)
+        self.send(ShootDataObject())
+        self.red_wand.led.set_color(ColorConstant.BLUE)
+        time.sleep(0.5)
         self.send(LightState('off'))
         time.sleep(0.4)
         self.red_wand.led.set_color(ColorConstant.RED)

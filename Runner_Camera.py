@@ -23,18 +23,7 @@ from Camera import Camera
 
 class Runner:
     def __init__(self):
-        # Create the I2C interface.
         self.restart = False
-        i2c = busio.I2C(board.SCL, board.SDA)
-
-        # 128x32 OLED Display
-        reset_pin = DigitalInOut(board.D4)
-        self.display = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c, reset=reset_pin)
-        # Clear the display.
-        self.display.fill(0)
-        self.display.show()
-        self.display_width = self.display.width
-        self.display_height = self.display.height
 
         self.camera = Camera(20, 21)
 
@@ -54,30 +43,22 @@ class Runner:
 
     def check_for_message(self):
         packet = None
-        # draw a box to clear the image
-        self.display.fill(0)
-        self.display.text('RasPi Radio', 35, 0, 1)
 
         # check for packet rx
         packet = self.rfm69.receive()
-        if packet is None:
-            self.display.show()
-            self.display.text('- Waiting for PKT -', 15, 20, 1)
-        else:
-            self.display.fill(0)
-            prev_packet = packet
-            packet_text = str(prev_packet, "utf-8")
-            data = json.loads(packet_text, object_hook=self._decoder)
-            print('Name: ' + data.name)
+        prev_packet = packet
+        packet_text = str(prev_packet, "utf-8")
+        data = json.loads(packet_text, object_hook=self._decoder)
+        print('Name: ' + data.name)
 
-            self.run_logic(data)
+        self.run_logic(data)
 
     def run_logic(self, command):
         if command.name == 'Focus':
-            print("Focusing!")
+            print('Focusing!')
             self.camera.focus()
         elif command.name == 'Shoot':
-            print("Shooting!")
+            print('Shooting!')
             self.camera.shoot()
         # elif command.name == 'Wait':
         #     time.sleep(command.time)
