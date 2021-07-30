@@ -60,15 +60,39 @@ class Runner:
         data = bytes(data + "\r\n","utf-8")
         self.rfm69.send(data)
 
-    def shoot(self, channel=None):
-        self.send(LightState('on'))
+    def simple_shoot(self, channel=None):
+        # What I used testing in Denver.
+        self.send(LightState(1, 'on'))
         time.sleep(0.1)
         self.send(ShootDataObject())
         self.red_wand.led.set_color(ColorConstant.BLUE)
         time.sleep(0.5)
-        self.send(LightState('off'))
+        self.send(LightState(1, 'off'))
         time.sleep(0.4)
         self.red_wand.led.set_color(ColorConstant.RED)
+
+    def toggle_all(self, channel=None):
+        t = 0.1
+        self.send(LightState(1, 'on'))
+        time.sleep(t)
+        self.send(LightState(2, 'on'))
+        time.sleep(t)
+        self.send(LightState(3, 'on'))
+        time.sleep(t)
+        self.send(LightState(4, 'on'))
+
+        time.sleep(0.5)
+
+        self.send(LightState(1, 'off'))
+        time.sleep(t)
+        self.send(LightState(2, 'off'))
+        time.sleep(t)
+        self.send(LightState(3, 'off'))
+        time.sleep(t)
+        self.send(LightState(4, 'off'))
+
+    def shoot(self, channel=None):
+        pass
 
     def focus(self, channel=None):
         self.send(FocusDataObject())
@@ -83,4 +107,6 @@ if __name__ == '__main__':
     r = Runner()
     while True:
         time.sleep(0.1)
+
+# 0.1 second delay after changing an outlet state
 

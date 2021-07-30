@@ -38,6 +38,9 @@ class Runner:
         self.rfm69.encryption_key = b'\x01\x02\x03\x04\x05\x06\x07\x08\x01\x02\x03\x04\x05\x06\x07\x08'
 
         self.switch1 = OutletSwitch(4, 17)
+        self.switch2 = OutletSwitch(18, 27)
+        self.switch3 = OutletSwitch(16, 19)
+        self.switch4 = OutletSwitch(20, 21)
 
 
     def _decoder(self, dict):
@@ -58,11 +61,21 @@ class Runner:
     def run_logic(self, command):
         if command.name == 'LightState':
             if command.state == 'on':
-                self.switch1.set_on()
+                self.get_switch(command.id).set_on()
             else:
-                self.switch1.set_off()
+                self.get_switch(command.id).set_off()
         if command.name == 'Reset':
             self.restart = True
+
+    def get_switch(self, id):
+        if id == 1:
+            return self.switch1
+        elif id == 2:
+            return self.switch2
+        elif id == 3:
+            return self.switch3
+        elif id == 4:
+            return self.switch4
 
 
 class Manager:
