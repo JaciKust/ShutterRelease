@@ -26,18 +26,6 @@ import Color as ColorConstant
 
 class Runner:
     def __init__(self):
-        # Create the I2C interface.
-        i2c = busio.I2C(board.SCL, board.SDA)
-
-        # 128x32 OLED Display
-        reset_pin = DigitalInOut(board.D4)
-        self.display = adafruit_ssd1306.SSD1306_I2C(128, 32, i2c, reset=reset_pin)
-        # Clear the display.
-        self.display.fill(0)
-        self.display.show()
-        self.display_width = self.display.width
-        self.display_height = self.display.height
-
         # Configure Packet Radio
         CS = DigitalInOut(board.CE1)
         RESET = DigitalInOut(board.D25)
@@ -55,6 +43,7 @@ class Runner:
         self.red_wand.white_button.button_events.on_depressed += self.reset
 
         self.red_wand.led.set_color(ColorConstant.RED)
+
     def send(self, data):
         data = json.dumps(data.__dict__)
         data = bytes(data + "\r\n","utf-8")
