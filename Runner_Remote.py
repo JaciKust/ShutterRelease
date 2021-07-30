@@ -92,7 +92,7 @@ class Runner:
         self.send(LightState(4, 'off'))
 
     def shoot(self, channel=None):
-        pass
+        self.toggle_all()
 
     def focus(self, channel=None):
         self.send(FocusDataObject())
